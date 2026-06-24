@@ -1,0 +1,11 @@
+__pycache__/
+venv/
+*.pyc
+page_images/
+diagrams/
+diagrams_1/
+extracted_images/
+extracted_imgs/
+output/
+*.egg-info/
+.DS_Store
