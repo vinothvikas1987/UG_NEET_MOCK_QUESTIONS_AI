@@ -1,8 +1,8 @@
 import os
-import gradio as gr
-import torch
-import json
 import re
+import json
+import torch
+import gradio as gr
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 MODEL_ID = os.environ.get("HF_MODEL_ID")
@@ -11,34 +11,42 @@ MAX_FREE = 5
 
 SUBJECTS_TOPICS = {
     "Physics": [
-        "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
-        "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
-        "Kinetic Theory of Gases", "Oscillations and Waves", "Electrostatics", "Current Electricity",
-        "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents",
-        "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei",
+        "Physics and Measurement", "Kinematics", "Laws of Motion",
+        "Work, Energy, and Power", "Rotational Motion", "Gravitation",
+        "Properties of Solids and Liquids", "Thermodynamics",
+        "Kinetic Theory of Gases", "Oscillations and Waves",
+        "Electrostatics", "Current Electricity",
+        "Magnetic Effects of Current and Magnetism",
+        "Electromagnetic Induction and Alternating Currents",
+        "Electromagnetic Waves", "Optics",
+        "Dual Nature of Matter and Radiation", "Atoms and Nuclei",
         "Electronic Devices", "Experimental Skills"
     ],
     "Chemistry": [
         "Some Basic Concepts of Chemistry", "Structure of Atom",
         "Classification of Elements and Periodicity in Properties",
-        "Chemical Bonding and Molecular Structure", "States of Matter: Gases and Liquids",
-        "Thermodynamics", "Equilibrium", "Redox Reactions", "Hydrogen",
-        "s-Block Elements (Alkali and Alkaline Earth Metals)", "p-Block Elements",
-        "Organic Chemistry: Some Basic Principles and Techniques", "Hydrocarbons",
-        "Environmental Chemistry", "Solid State", "Solutions", "Electrochemistry",
-        "Chemical Kinetics", "Surface Chemistry",
-        "General Principles and Processes of Isolation of Elements"
+        "Chemical Bonding and Molecular Structure",
+        "States of Matter: Gases and Liquids", "Thermodynamics",
+        "Equilibrium", "Redox Reactions", "Hydrogen",
+        "s-Block Elements", "p-Block Elements",
+        "Organic Chemistry: Basic Principles and Techniques",
+        "Hydrocarbons", "Environmental Chemistry", "Solid State",
+        "Solutions", "Electrochemistry", "Chemical Kinetics",
+        "Surface Chemistry", "Isolation of Elements"
     ],
     "Botany": [
-        "Diversity in the Living World", "Structural Organisation in Plants and Animals",
-        "Cell Structure and Function", "Plant Physiology", "Human Physiology",
-        "Reproduction", "Genetics and Evolution", "Biology and Human Welfare",
+        "Diversity in the Living World",
+        "Structural Organisation in Plants and Animals",
+        "Cell Structure and Function", "Plant Physiology",
+        "Human Physiology", "Reproduction",
+        "Genetics and Evolution", "Biology and Human Welfare",
         "Biotechnology", "Ecology and Environment"
     ],
     "Zoology": [
-        "Animal Kingdom", "Structural Organisation in Animals", "Animal Physiology",
-        "Human Physiology", "Reproduction", "Genetics and Evolution",
-        "Biology and Human Welfare", "Biotechnology", "Ecology and Environment"
+        "Animal Kingdom", "Structural Organisation in Animals",
+        "Animal Physiology", "Human Physiology", "Reproduction",
+        "Genetics and Evolution", "Biology and Human Welfare",
+        "Biotechnology", "Ecology and Environment"
     ]
 }
 
@@ -88,13 +96,21 @@ def update_topics(subject):
 
 def on_generate(subject, topic, count):
     if count >= MAX_FREE:
-        return f"Free limit reached. Contact {CONTACT_EMAIL} for unlimited access.", count, gr.update(interactive=False)
+        return (
+            f"**Free limit reached!**\n\n"
+            f"Contact **{CONTACT_EMAIL}** for unlimited access.",
+            count,
+            gr.update(interactive=False)
+        )
 
     result = generate(subject, topic)
     count += 1
 
     if count >= MAX_FREE:
-        result += f"\n\n---\n**Free limit reached.** Email {CONTACT_EMAIL} for unlimited access."
+        result += (
+            f"\n\n---\n**Free limit reached!** "
+            f"Email **{CONTACT_EMAIL}** for unlimited access."
+        )
         return result, count, gr.update(interactive=False)
 
     remaining = MAX_FREE - count
@@ -106,8 +122,17 @@ with gr.Blocks(title="NEET Question Generator", theme=gr.themes.Soft()) as demo:
     gr.Markdown("Select a subject and topic to generate NEET-style MCQs.")
 
     state = gr.State(0)
-    subject_dd = gr.Dropdown(choices=list(SUBJECTS_TOPICS.keys()), label="Subject", value="Physics")
-    topic_dd = gr.Dropdown(choices=SUBJECTS_TOPICS["Physics"], label="Topic")
+
+    with gr.Row():
+        subject_dd = gr.Dropdown(
+            choices=list(SUBJECTS_TOPICS.keys()),
+            label="Subject",
+            value="Physics"
+        )
+        topic_dd = gr.Dropdown(
+            choices=SUBJECTS_TOPICS["Physics"],
+            label="Topic"
+        )
 
     subject_dd.change(fn=update_topics, inputs=subject_dd, outputs=topic_dd)
 
