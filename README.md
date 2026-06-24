@@ -4,7 +4,7 @@
 
 A fine-tuned language model that generates NEET-style multiple-choice questions across Physics, Chemistry, Botany, and Zoology, trained on official NEET question papers from 2019-2025.
 
-**[Request Model Access](mailto:vinoth.vikas1987@gmail.com?subject=NEET%20Model%20Access%20Request)**
+**[Request Model Access →](https://huggingface.co/vinothvikas1987/UG_NEET_TRAINED_SLM)**
 
 ---
 
@@ -97,9 +97,9 @@ The model weights are available via gated access on Hugging Face.
 
 ### How to Request Access
 
-1. **Send an email** to: [vinoth.vikas1987@gmail.com](mailto:vinoth.vikas1987@gmail.com?subject=NEET%20Model%20Access%20Request)
-2. **Include**: Your name, organization, and intended use case
-3. **Receive**: Model access link and usage instructions
+1. **[Go to the Hugging Face model page →](https://huggingface.co/vinothvikas1987/UG_NEET_TRAINED_SLM)**
+2. Click **Request access** and fill in the form
+3. Your request will be reviewed shortly
 
 ### What You Get
 
@@ -138,7 +138,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **Vinoth Vikas**
 - Email: [vinoth.vikas1987@gmail.com](mailto:vinoth.vikas1987@gmail.com)
-- Model Access: [Request Here](mailto:vinoth.vikas1987@gmail.com?subject=NEET%20Model%20Access%20Request)
+- Model Access: [Request Here](https://huggingface.co/vinothvikas1987/UG_NEET_TRAINED_SLM)
 
 ---
 
@@ -146,6 +146,6 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **Built for NEET aspirants**
 
-[Request Model Access](mailto:vinoth.vikas1987@gmail.com?subject=NEET%20Model%20Access%20Request)
+[Request Model Access →](https://huggingface.co/vinothvikas1987/UG_NEET_TRAINED_SLM)
 
 </div>
