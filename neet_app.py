@@ -19,6 +19,7 @@ login()  # Paste your HF token when prompted
 import os
 import re
 import json
+import requests
 import torch
 import gradio as gr
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
@@ -28,7 +29,8 @@ CONTACT_EMAIL = "vinothvikas1987@gmail.com"
 MAX_FREE = 5
 API_KEY = "NEET2024"  # Change this to any key you want
 
-usage_db = {}
+# Cloudflare Worker URL for email tracking
+TRACKER_URL = "https://neet-email-tracker.YOUR_USERNAME.workers.dev"
 
 SUBJECTS_TOPICS = {
     "Physics": [
@@ -88,6 +90,20 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 print("Model loaded!")
 
+def check_email_usage(email):
+    try:
+        resp = requests.get(f"{TRACKER_URL}?action=check&email={email}", timeout=5)
+        return resp.json()
+    except Exception:
+        return {"used": 0, "remaining": MAX_FREE, "blocked": False}
+
+def use_email(email):
+    try:
+        resp = requests.get(f"{TRACKER_URL}?action=use&email={email}", timeout=5)
+        return resp.json()
+    except Exception:
+        return {"used": 1, "remaining": MAX_FREE - 1, "blocked": False}
+
 def generate(subject, topic):
     prompt = f"Generate a {subject} question on the topic '{topic}' without a diagram."
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
@@ -125,28 +141,26 @@ def on_generate(subject, topic, email, count):
     if not email or "@" not in email:
         return "Please enter a valid email address.", count, gr.update(interactive=True)
 
-    if email not in usage_db:
-        usage_db[email] = 0
-
-    if usage_db[email] >= MAX_FREE:
+    status = check_email_usage(email)
+    if status.get("blocked"):
         return (
             f"**Free limit reached!**\n\n"
-            f"You have used all 5 free questions.\n\n"
+            f"You have used all {MAX_FREE} free questions.\n\n"
             f"Contact **{CONTACT_EMAIL}** for unlimited access."
         ), count, gr.update(interactive=False)
 
     result = generate(subject, topic)
-    usage_db[email] += 1
-    count = usage_db[email]
+    usage = use_email(email)
+    count = usage.get("used", count + 1)
 
-    if count >= MAX_FREE:
+    if usage.get("blocked"):
         result += (
             f"\n\n---\n**Free limit reached!** "
             f"Email **{CONTACT_EMAIL}** for unlimited access."
         )
         return result, count, gr.update(interactive=False)
 
-    remaining = MAX_FREE - count
+    remaining = usage.get("remaining", MAX_FREE - count)
     result += f"\n\n*{remaining} free question(s) remaining for {email}*"
     return result, count, gr.update(interactive=True)
 
@@ -185,4 +199,5 @@ with gr.Blocks(title="NEET Question Generator", theme=gr.themes.Soft()) as demo:
         outputs=[key_screen, main_screen, key_error]
     )
 
-demo.launch(share=True)
+if __name__ == "__main__":
+    demo.launch(share=True)
