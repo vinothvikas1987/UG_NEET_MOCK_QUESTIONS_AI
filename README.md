@@ -2,7 +2,7 @@
 
 A fine-tuned Qwen2.5-7B model that generates NEET-style multiple choice questions across Physics, Chemistry, Botany, and Zoology.
 
-**Try the demo:** [Hugging Face Space](https://huggingface.co/vinothvikas1987/qwen-lora-finetune-merged)
+**Try the demo:** [Hugging Face Space](https://huggingface.co/vinothvikas1987/UG_NEET_MOCK_QUESTIONS_AI)
 
 **Model:** [vinothvikas1987/qwen-lora-finetune-merged](https://huggingface.co/vinothvikas1987/qwen-lora-finetune-merged)
 
