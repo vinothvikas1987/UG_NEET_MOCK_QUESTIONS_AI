@@ -1,10 +1,8 @@
 # NEET Question Generator
 
-A fine-tuned Qwen2.5-7B model that generates NEET-style multiple choice questions across Physics, Chemistry, Botany, and Zoology.
+A fine-tuned SLM that generates NEET-style multiple choice questions across Physics, Chemistry, Botany, and Zoology based on previous year question patterns.
 
 **Try the demo:** [Hugging Face Space](https://huggingface.co/vinothvikas1987/UG_NEET_MOCK_QUESTIONS_AI)
-
-**Model:** [vinothvikas1987/qwen-lora-finetune-merged](https://huggingface.co/vinothvikas1987/qwen-lora-finetune-merged)
 
 ## Features
 
@@ -23,9 +21,3 @@ A fine-tuned Qwen2.5-7B model that generates NEET-style multiple choice question
 Try the free demo on Hugging Face Spaces (limited to 5 questions).
 
 For unlimited access, contact: vinothvikas1987@gmail.com
-
-## Architecture
-
-- Base model: Qwen2.5-7B
-- Fine-tuned with LoRA on NEET question data
-- Quantized to 4-bit for efficient inference

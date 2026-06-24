@@ -1,10 +1,11 @@
+import os
 import gradio as gr
 import torch
 import json
 import re
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-MODEL_ID = "vinothvikas1987/qwen-lora-finetune-merged"
+MODEL_ID = os.environ.get("HF_MODEL_ID")
 CONTACT_EMAIL = "vinothvikas1987@gmail.com"
 MAX_FREE = 5
 
