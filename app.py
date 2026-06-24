@@ -3,14 +3,15 @@ import re
 import json
 import torch
 import gradio as gr
+from huggingface_hub import HfApi, hf_hub_download
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 MODEL_ID = os.environ.get("MODELID")
 CONTACT_EMAIL = "vinothvikas1987@gmail.com"
 MAX_FREE = 5
 API_KEY = os.environ.get("APIKEY")
-
-usage_db = {}
+EMAIL_DB_REPO = "vinothvikas1987/neet-email-usage"
+EMAIL_DB_FILE = "email_usage.json"
 
 SUBJECTS_TOPICS = {
     "Physics": [
@@ -53,6 +54,35 @@ SUBJECTS_TOPICS = {
     ]
 }
 
+hf_token = os.environ.get("HFTOKEN")
+api = HfApi(token=hf_token)
+
+def load_usage_db():
+    try:
+        path = hf_hub_download(
+            repo_id=EMAIL_DB_REPO,
+            filename=EMAIL_DB_FILE,
+            repo_type="dataset",
+            token=hf_token
+        )
+        with open(path, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_usage_db(db):
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(db, f, indent=2)
+        tmp_path = f.name
+    api.upload_file(
+        path_or_fileobj=tmp_path,
+        path_in_repo=EMAIL_DB_FILE,
+        repo_id=EMAIL_DB_REPO,
+        repo_type="dataset"
+    )
+    os.remove(tmp_path)
+
 print("Loading model...")
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -75,7 +105,7 @@ def generate(subject, topic):
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(**inputs, max_new_tokens=300, temperature=0.7)
     result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    json_blocks = re.findall(r'\{.*?\}(?=\{|\Z)', result, re.DOTALL)
+    json_blocks = re.findall(r"\{.*?\}(?=\{|\Z)", result, re.DOTALL)
     for block in json_blocks:
         try:
             d = json.loads(block)
@@ -107,6 +137,8 @@ def on_generate(subject, topic, email, count):
     if not email or "@" not in email:
         return "Please enter a valid email address.", count, gr.update(interactive=True)
 
+    usage_db = load_usage_db()
+
     if email not in usage_db:
         usage_db[email] = 0
 
@@ -119,6 +151,7 @@ def on_generate(subject, topic, email, count):
 
     result = generate(subject, topic)
     usage_db[email] += 1
+    save_usage_db(usage_db)
     count = usage_db[email]
 
     if count >= MAX_FREE:
