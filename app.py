@@ -5,9 +5,12 @@ import torch
 import gradio as gr
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-MODEL_ID = os.environ.get("HF_MODEL_ID")
+MODEL_ID = os.environ.get("MODELID")
 CONTACT_EMAIL = "vinothvikas1987@gmail.com"
 MAX_FREE = 5
+API_KEY = os.environ.get("APIKEY")
+
+usage_db = {}
 
 SUBJECTS_TOPICS = {
     "Physics": [
@@ -50,6 +53,7 @@ SUBJECTS_TOPICS = {
     ]
 }
 
+print("Loading model...")
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_use_double_quant=True,
@@ -64,13 +68,13 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
     trust_remote_code=True
 )
+print("Model loaded!")
 
 def generate(subject, topic):
     prompt = f"Generate a {subject} question on the topic '{topic}' without a diagram."
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(**inputs, max_new_tokens=300, temperature=0.7)
     result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
     json_blocks = re.findall(r'\{.*?\}(?=\{|\Z)', result, re.DOTALL)
     for block in json_blocks:
         try:
@@ -91,20 +95,31 @@ def generate(subject, topic):
             continue
     return "Could not generate a valid question. Try again."
 
+def check_key(key):
+    if key == API_KEY:
+        return gr.update(visible=False), gr.update(visible=True), ""
+    return gr.update(visible=True), gr.update(visible=False), "Invalid key. Try again."
+
 def update_topics(subject):
     return gr.Dropdown(choices=SUBJECTS_TOPICS[subject], value=SUBJECTS_TOPICS[subject][0])
 
-def on_generate(subject, topic, count):
-    if count >= MAX_FREE:
+def on_generate(subject, topic, email, count):
+    if not email or "@" not in email:
+        return "Please enter a valid email address.", count, gr.update(interactive=True)
+
+    if email not in usage_db:
+        usage_db[email] = 0
+
+    if usage_db[email] >= MAX_FREE:
         return (
             f"**Free limit reached!**\n\n"
-            f"Contact **{CONTACT_EMAIL}** for unlimited access.",
-            count,
-            gr.update(interactive=False)
-        )
+            f"You have used all 5 free questions.\n\n"
+            f"Contact **{CONTACT_EMAIL}** for unlimited access."
+        ), count, gr.update(interactive=False)
 
     result = generate(subject, topic)
-    count += 1
+    usage_db[email] += 1
+    count = usage_db[email]
 
     if count >= MAX_FREE:
         result += (
@@ -114,35 +129,42 @@ def on_generate(subject, topic, count):
         return result, count, gr.update(interactive=False)
 
     remaining = MAX_FREE - count
-    result += f"\n\n*{remaining} free question(s) remaining*"
+    result += f"\n\n*{remaining} free question(s) remaining for {email}*"
     return result, count, gr.update(interactive=True)
 
 with gr.Blocks(title="NEET Question Generator", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# NEET Question Generator")
-    gr.Markdown("Select a subject and topic to generate NEET-style MCQs.")
 
-    state = gr.State(0)
+    with gr.Group(visible=True) as key_screen:
+        gr.Markdown("### Enter your access key to continue")
+        key_input = gr.Textbox(label="Access Key", type="password")
+        key_error = gr.Markdown("")
+        key_btn = gr.Button("Submit", variant="primary")
 
-    with gr.Row():
-        subject_dd = gr.Dropdown(
-            choices=list(SUBJECTS_TOPICS.keys()),
-            label="Subject",
-            value="Physics"
+    with gr.Group(visible=False) as main_screen:
+        gr.Markdown("### Select subject and topic to generate NEET-style MCQs")
+        email_input = gr.Textbox(label="Your Email", placeholder="you@example.com")
+        state = gr.State(0)
+
+        with gr.Row():
+            subject_dd = gr.Dropdown(choices=list(SUBJECTS_TOPICS.keys()), label="Subject", value="Physics")
+            topic_dd = gr.Dropdown(choices=SUBJECTS_TOPICS["Physics"], label="Topic")
+
+        subject_dd.change(fn=update_topics, inputs=subject_dd, outputs=topic_dd)
+
+        btn = gr.Button("Generate Question", variant="primary")
+        output = gr.Markdown()
+
+        btn.click(
+            fn=on_generate,
+            inputs=[subject_dd, topic_dd, email_input, state],
+            outputs=[output, state, btn]
         )
-        topic_dd = gr.Dropdown(
-            choices=SUBJECTS_TOPICS["Physics"],
-            label="Topic"
-        )
 
-    subject_dd.change(fn=update_topics, inputs=subject_dd, outputs=topic_dd)
-
-    btn = gr.Button("Generate Question", variant="primary")
-    output = gr.Markdown()
-
-    btn.click(
-        fn=on_generate,
-        inputs=[subject_dd, topic_dd, state],
-        outputs=[output, state, btn]
+    key_btn.click(
+        fn=check_key,
+        inputs=[key_input],
+        outputs=[key_screen, main_screen, key_error]
     )
 
 if __name__ == "__main__":
